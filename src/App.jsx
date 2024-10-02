@@ -20,7 +20,7 @@ import { isAndroid, isCordova, isWebApp } from './js/common/utils/isCordovaOrWeb
 import { renderLog } from './js/common/utils/logging';
 import Header from './js/components/Navigation/Header';
 import HeaderBarSuspense from './js/components/Navigation/HeaderBarSuspense';
-import webAppConfig from './js/config';
+import webAppConfig, { GOOGLE_TAG_MANAGER_ID } from './js/config';
 import VoterStore from './js/stores/VoterStore';
 import initializeFacebookSDK from './js/utils/initializeFacebookSDK';
 import RouterV5SendMatch from './js/utils/RouterV5SendMatch';
@@ -262,14 +262,12 @@ class App extends Component {
         ReactGA.gtag('set', 'voter', {
           weVoteId: voterWeVoteId,
         });
-        const weVoteGTMId = webAppConfig.GOOGLE_ADS_TRACKING_ID === undefined ? '' : webAppConfig.GOOGLE_ADS_TRACKING_ID;
-        if (weVoteGTMId) {
-          const tagManagerArgs = {
-            gtmId: weVoteGTMId,
-          };
-          TagManager.initialize(tagManagerArgs);
-        }
+        // const weVoteGTMId = webAppConfig.GOOGLE_ADS_TRACKING_ID === undefined ? '' : webAppConfig.GOOGLE_ADS_TRACKING_ID;
       }, 3000);
+      const tagManagerArgs = {
+        gtmId: GOOGLE_TAG_MANAGER_ID,
+      };
+      TagManager.initialize(tagManagerArgs);
     }
     if (!AppObservableStore.getOpenReplayEnabled() && !AppObservableStore.getOpenReplayPending()) {
       AppObservableStore.setOpenReplayPending(true);

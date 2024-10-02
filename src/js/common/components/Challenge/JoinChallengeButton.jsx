@@ -1,4 +1,5 @@
 import withStyles from '@mui/styles/withStyles';
+import TagManager from 'react-gtm-module';
 import { Button } from '@mui/material';
 import PropTypes from 'prop-types';
 import React from 'react';
@@ -121,7 +122,14 @@ class JoinChallengeButton extends React.Component {
     const itemsAreMissing = !(voterFirstName) || !(voterPhotoUrlLarge) || !(voterPlanCreatedForThisElection); // Temporarily assume we have something we need from voter
     if (VoterStore.getVoterIsSignedIn()) {
       // TODO: Make API call that joins this challenge
-
+      TagManager.dataLayer({
+        dataLayer: {
+          event: 'inviteFriendsClick',
+          category: 'Button',
+          action: 'Click',
+          label: 'Invite Friends',
+        },
+      });
       let joinChallengeNextStepPath = '';
       if (itemsAreMissing) {
         joinChallengeNextStepPath = `${challengeBasePath}join-challenge`;
