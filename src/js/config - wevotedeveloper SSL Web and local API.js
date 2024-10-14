@@ -6,10 +6,10 @@ module.exports = {
   WE_VOTE_IMAGE_PATH_FOR_CORDOVA: 'https://wevote.us',   // If you are not working with Cordova, you don't need to change this
   SECURE_CERTIFICATE_INSTALLED: false,
 
-  WE_VOTE_SERVER_ROOT_URL: 'https://wevotedeveloper.com:8000/',
-  WE_VOTE_SERVER_ADMIN_ROOT_URL: 'https://wevotedeveloper.com:8000/admin/',
-  WE_VOTE_SERVER_API_ROOT_URL: 'https://wevotedeveloper.com:8000/apis/v1/',
-  WE_VOTE_SERVER_API_CDN_ROOT_URL: 'https://wevotedeveloper.com:8000/apis/v1/',
+  WE_VOTE_SERVER_ROOT_URL: 'https://api.wevoteusa.org/',
+  WE_VOTE_SERVER_ADMIN_ROOT_URL: 'https://api.wevoteusa.org/admin/',
+  WE_VOTE_SERVER_API_ROOT_URL: 'https://api.wevoteusa.org/apis/v1/',
+  WE_VOTE_SERVER_API_CDN_ROOT_URL: 'https://cdn.wevoteusa.org/apis/v1/',
 
   ENABLE_NEXT_RELEASE_FEATURES: false,
   ENABLE_WORKBOX_SERVICE_WORKER: false,  // After setting this false, recompile, then in Chrome DevTools go to Application Tab, Application/Service Worker and for the sw.js click the "unregister" button to the right

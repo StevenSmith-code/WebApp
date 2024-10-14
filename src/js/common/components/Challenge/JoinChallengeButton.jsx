@@ -125,9 +125,7 @@ class JoinChallengeButton extends React.Component {
       TagManager.dataLayer({
         dataLayer: {
           event: 'inviteFriendsClick',
-          category: 'Button',
-          action: 'Click',
-          label: 'Invite Friends',
+          pageType: 'challenge',
         },
       });
       let joinChallengeNextStepPath = '';
@@ -145,6 +143,12 @@ class JoinChallengeButton extends React.Component {
         goToNextStepAfterSignIn: true,
       });
       AppObservableStore.setShowSignInModal(true);
+      TagManager.dataLayer({
+        dataLayer: {
+          event: 'inviteFriendsSignIn',
+          pageType: 'challenge',
+        },
+      });
     }
   }
 
