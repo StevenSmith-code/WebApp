@@ -259,15 +259,15 @@ class App extends Component {
           console.log('Google Analytics did not receive a trackingID, NOT ENABLED');
         }
         const voterWeVoteId = VoterStore.getVoterWeVoteId();
-        ReactGA.gtag('set', 'voter', {
-          weVoteId: voterWeVoteId,
-        });
+        const tagManagerArgs = {
+          gtmId: GOOGLE_TAG_MANAGER_ID,
+          dataLayer: {
+            weVoteId: voterWeVoteId,
+          },
+        };
+        TagManager.initialize(tagManagerArgs);
         // const weVoteGTMId = webAppConfig.GOOGLE_ADS_TRACKING_ID === undefined ? '' : webAppConfig.GOOGLE_ADS_TRACKING_ID;
       }, 3000);
-      const tagManagerArgs = {
-        gtmId: GOOGLE_TAG_MANAGER_ID,
-      };
-      TagManager.initialize(tagManagerArgs);
     }
     if (!AppObservableStore.getOpenReplayEnabled() && !AppObservableStore.getOpenReplayPending()) {
       AppObservableStore.setOpenReplayPending(true);
