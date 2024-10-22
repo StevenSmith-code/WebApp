@@ -23,6 +23,7 @@ import {
 import { PositionRowListInnerWrapper, PositionRowListOneWrapper, PositionRowListOuterWrapper } from '../Style/PositionRowListStyles';
 import BallotMatchIndicator from '../BallotItem/BallotMatchIndicator';
 import PositionRowListCompressed from './PositionRowListCompressed';
+import BallotMatchIndicator2024 from '../BallotItem/BallotMatchIndicator2024';
 
 // const DelayedLoad = React.lazy(() => import(/* webpackChunkName: 'DelayedLoad' */ '../../common/components/Widgets/DelayedLoad'));
 const ImageHandler = React.lazy(() => import(/* webpackChunkName: 'ImageHandler' */ '../ImageHandler'));
@@ -98,29 +99,29 @@ class BallotScrollingContainer extends Component {
     }
   };
 
-  handleContainerClick = (e, weVoteId, externalUniqueId) => {
-//     const candidateContainer = e.target.closest(".candidate-container-div")
-    const candidateContainer = document.getElementsByClassName('candidate-container-div')[0]
-    const positionRowListOuterWrapper = document.getElementsByClassName('position-row-list-outer-wrapper-div')[0]
-    const candidateImageAndName = document.getElementById(`officeItemCompressedCandidateImageAndName-${weVoteId}-${externalUniqueId}`);
-    const candidateNameAndPartyWrapper = document.getElementsByClassName('candidate-name-and-party-wrapper-div')[0]
-    const candidateNameH4 = document.getElementsByClassName('candidate-name-h4-div')[0]
-    console.log(positionRowListOuterWrapper, candidateNameAndPartyWrapper)
-      if (e.target === candidateImageAndName
-            || e.target === candidateContainer
-            || e.target === positionRowListOuterWrapper
-            || e.target === candidateNameAndPartyWrapper
-            ||e.target ===candidateNameH4) {
-        this.onClickShowOrganizationModalWithBallotItemInfoAndPositions(weVoteId)
-        }
+  // Add data-modal-trigger attribute to elements that should be triggered
+  handleContainerClick = (e, weVoteId) => {
+    const target = e.target;
+    if (target.hasAttribute('data-modal-trigger')) {
+      this.onClickShowOrganizationModalWithBallotItemInfoAndPositions(weVoteId);
     }
+  }
 
   render () {
     const { oneCandidate, externalUniqueId, isFirstBallotItem, candidateCount, limitNumberOfCandidatesShownToThisNumber } = this.props;
     const candidatePartyText = oneCandidate.party && oneCandidate.party.length ? `${oneCandidate.party}` : '';
     const avatarCompressed = 'card-main__avatar-compressed';
     const avatarBackgroundImage = normalizedImagePath('../img/global/svg-icons/avatar-generic.svg');
+    // Placeholder for dynamic match level
+    const matchLevel = 'Good Match';
 
+    // Convert matchLevel string to boolean props
+    const isBestMatch = matchLevel === 'Best Match';
+    const isGoodMatch = matchLevel === 'Good Match';
+    const isFairMatch = matchLevel === 'Fair Match';
+    const isPoorMatch = matchLevel === 'Poor Match';
+    const isItAMatch = matchLevel === 'Is it a Match?';
+    const noData = matchLevel === 'No Data';
     const pigsCanFly = false;
     return (
       <BallotScrollingInnerWrapper>
@@ -137,18 +138,20 @@ class BallotScrollingContainer extends Component {
           showRightGradient={!this.state.hideRightArrow}
           onClick={(e) => this.handleContainerClick(e, oneCandidate.we_vote_id, externalUniqueId)}
         >
-          <CandidateContainer className="candidate-container-div" >
+          <CandidateContainer
+            data-modal-trigger
+            className="u-cursor--pointer"
+          >
             <CandidateWrapper>
-              <CandidateInfo>
+              <CandidateInfo data-modal-trigger>
                 <CandidateTopRow>
-                  <Candidate
-                    id={`officeItemCompressedCandidateImageAndName-${oneCandidate.we_vote_id}-${externalUniqueId}`}
-                  >
+                  <Candidate data-modal-trigger>
                     {/* Candidate Image */}
-                    <CandidateImageAndMatchWrapper>
+                    <CandidateImageAndMatchWrapper data-modal-trigger>
                       <Suspense fallback={<></>}>
                         <ImageHandler
                           className={avatarCompressed}
+                          ballotItemWeVoteId={oneCandidate.we_vote_id}
                           sizeClassName="icon-candidate-small u-push--sm "
                           imageUrl={oneCandidate.candidate_photo_url_large}
                           alt=""
@@ -163,28 +166,39 @@ class BallotScrollingContainer extends Component {
                       )}
                     </CandidateImageAndMatchWrapper>
                     {/* Candidate Name */}
-                    <CandidateNameAndPartyWrapper className="candidate-name-and-party-wrapper-div">
-                      <CandidateNameH4 className="candidate-name-h4-div">
+                    <CandidateNameAndPartyWrapper data-modal-trigger>
+                      <CandidateNameH4 data-modal-trigger>
                         {oneCandidate.ballot_item_display_name}
                       </CandidateNameH4>
-                      <CandidateParty>
+                      <CandidateParty data-modal-trigger>
                         {candidatePartyText}
                       </CandidateParty>
+                      {pigsCanFly && (
+                        <BallotMatchIndicator2024
+                          isBestMatch={isBestMatch}
+                          isGoodMatch={isGoodMatch}
+                          isFairMatch={isFairMatch}
+                          isPoorMatch={isPoorMatch}
+                          isItAMatch={isItAMatch}
+                          noData={noData}
+                        />
+                      )}
                     </CandidateNameAndPartyWrapper>
                   </Candidate>
                 </CandidateTopRow>
-                <CandidateBottomRow className="candidate-bottom-row">
+                <CandidateBottomRow data-modal-trigger>
                   {!hideCandidateDetails && (
                     <Suspense fallback={<></>}>
                       <IssuesByBallotItemDisplayList
                         ballotItemDisplayName={oneCandidate.ballot_item_display_name}
                         ballotItemWeVoteId={oneCandidate.we_vote_id}
                         externalUniqueId={`officeItemCompressed-${oneCandidate.we_vote_id}-${externalUniqueId}`}
+                        handleContainerClick={this.handleContainerClick}
                       />
                     </Suspense>
                   )}
                   {!hideItemActionBar && (
-                    <ItemActionBarOutsideWrapper>
+                    <ItemActionBarOutsideWrapper data-modal-trigger>
                       <Suspense fallback={<></>}>
                         <ItemActionBar
                           ballotItemWeVoteId={oneCandidate.we_vote_id}
@@ -202,7 +216,7 @@ class BallotScrollingContainer extends Component {
                 </CandidateBottomRow>
               </CandidateInfo>
             </CandidateWrapper>
-            <PositionRowListOuterWrapper className="position-row-list-outer-wrapper-div">
+            <PositionRowListOuterWrapper data-modal-trigger>
               {!!(oneCandidate.linked_campaignx_we_vote_id) && (
                 <HeartFavoriteToggleLocalWrapper>
                   <HeartFavoriteToggleLoader campaignXWeVoteId={oneCandidate.linked_campaignx_we_vote_id} />

@@ -1,10 +1,15 @@
-import React, { Suspense } from 'react';
+import React, { Suspense, useState } from 'react';
 import PropTypes from 'prop-types';
 import styled from 'styled-components';
 import { withStyles } from '@mui/styles';
 import ChallengeInviteeList from './ChallengeInviteeList';
 import FirstChallengeInviteeListController from './FirstChallengeInviteeListController';
+import AppObservableStore, { messageService } from '../../stores/AppObservableStore';
 import ChallengeInviteeStore from '../../stores/ChallengeInviteeStore';
+import DesignTokenColors from '../Style/DesignTokenColors';
+import ChallengeParticipantStore from '../../stores/ChallengeParticipantStore';
+
+const ChallengeParticipantFirstRetrieveController = React.lazy(() => import(/* webpackChunkName: 'ChallengeParticipantFirstRetrieveController' */ '../ChallengeParticipant/ChallengeParticipantFirstRetrieveController'));
 
 const inviteeListDummyData = [
   { invitee_id: 1, invitee_name: 'Jane', invite_sent: false, invite_viewed: false, challenge_joined: false, messageStatus: '' },
@@ -19,37 +24,83 @@ const inviteeListDummyData = [
   { invitee_id: 10, invitee_name: 'Melina H.', invite_sent: true, invite_viewed: true, challenge_joined: true, messageStatus: 'Challenge Joined' },
   { invitee_id: 11, invitee_name: 'Melina H.', invite_sent: true, invite_viewed: false, challenge_joined: false, messageStatus: 'Message Sent' },
   { invitee_id: 12, invitee_name: 'Melina H.', invite_sent: true, invite_viewed: false, challenge_joined: false, messageStatus: 'Message Sent' },
+  { invitee_id: 13, invitee_name: 'Melina H.', invite_sent: true, invite_viewed: true, challenge_joined: true, messageStatus: 'Challenge Joined' },
+  { invitee_id: 14, invitee_name: 'Melina H.', invite_sent: true, invite_viewed: false, challenge_joined: false, messageStatus: 'Message Sent' },
+  { invitee_id: 15, invitee_name: 'Melina H.', invite_sent: true, invite_viewed: false, challenge_joined: false, messageStatus: 'Message Sent' },
 ];
 
-const ChallengeInviteeListRoot = ({ challengeWeVoteId, classes }) => {
+const ChallengeInviteeListRoot = ({ challengeWeVoteId, hideRank }) => {
   // eslint-disable-next-line no-unused-vars
   const [inviteeList, setInviteeList] = React.useState([]);
+  const [participantsCount, setParticipantsCount] = useState(0);
+  const [rankOfVoter, setRankOfVoter] = React.useState(0);
+
+  const onAppObservableStoreChange = () => {
+    setRankOfVoter(AppObservableStore.getChallengeParticipantRankOfVoterByChallengeWeVoteId(challengeWeVoteId));
+  };
 
   const onChallengeInviteeStoreChange = () => {
-    setInviteeList(ChallengeInviteeStore.getChallengeInviteeList(challengeWeVoteId));
+    // console.log('ChallengeInviteeStoreChange');
+    const incomingInviteeList = ChallengeInviteeStore.getChallengeInviteeList(challengeWeVoteId);
+    // console.log('ChallengeInviteeListRoot onChallengeInviteeStoreChange incomingInviteeList:', incomingInviteeList);
+    const incomingInviteeListNew = [...incomingInviteeList];  // So React detects this as a new list
+    setInviteeList(incomingInviteeListNew);
+  };
+
+  const onChallengeParticipantStoreChange = () => {
+    const sortedParticipantsWithRank = ChallengeParticipantStore.getChallengeParticipantList(challengeWeVoteId);
+    setParticipantsCount(sortedParticipantsWithRank.length);
   };
 
   React.useEffect(() => {
     // console.log('Fetching participants for:', challengeWeVoteId);
-    const storeListener = ChallengeInviteeStore.addListener(onChallengeInviteeStoreChange);
+    const appStateSubscription = messageService.getMessage().subscribe(() => onAppObservableStoreChange());
+    onAppObservableStoreChange();
+    const challengeInviteeStoreListener = ChallengeInviteeStore.addListener(onChallengeInviteeStoreChange);
     onChallengeInviteeStoreChange();
+    const challengeParticipantStoreListener = ChallengeParticipantStore.addListener(onChallengeParticipantStoreChange);
+    onChallengeParticipantStoreChange();
 
     return () => {
-      storeListener.remove();
+      appStateSubscription.unsubscribe();
+      challengeInviteeStoreListener.remove();
+      challengeParticipantStoreListener.remove();
     };
   }, [challengeWeVoteId]);
   return (
     <ChallengeInviteeListRootContainer>
       <Heading>
-        <p style={{ fontWeight: 'bold', padding: '10px' }}>Invited Friends</p>
+        {!!(rankOfVoter && !hideRank) && (
+          <RankContainer>
+            <RankText>You&apos;re</RankText>
+            {' '}
+            <RankNumber>
+              #
+              {rankOfVoter}
+            </RankNumber>
+            {' '}
+            <RankDetails>
+              (of
+              {' '}
+              {participantsCount}
+              )
+            </RankDetails>
+          </RankContainer>
+        )}
+        <FriendsTableHeader>
+          Invited Friends
+        </FriendsTableHeader>
       </Heading>
       <ChallengeInviteeList
         challengeWeVoteId={challengeWeVoteId}
-        // inviteeList={inviteeList}
-        inviteeList={inviteeListDummyData}
+        inviteeList={inviteeList}
+        // inviteeList={inviteeListDummyData}
       />
       <Suspense fallback={<></>}>
         <FirstChallengeInviteeListController challengeWeVoteId={challengeWeVoteId} searchText="SEARCH TEXT HERE" />
+      </Suspense>
+      <Suspense fallback={<span>&nbsp;</span>}>
+        <ChallengeParticipantFirstRetrieveController challengeWeVoteId={challengeWeVoteId} />
       </Suspense>
     </ChallengeInviteeListRootContainer>
   );
@@ -57,6 +108,7 @@ const ChallengeInviteeListRoot = ({ challengeWeVoteId, classes }) => {
 ChallengeInviteeListRoot.propTypes = {
   classes: PropTypes.object,
   challengeWeVoteId: PropTypes.string,
+  hideRank: PropTypes.bool,
 };
 
 const styles = () => ({
@@ -64,19 +116,43 @@ const styles = () => ({
     padding: '2px 16px',
     borderRadius: 5,
   },
-  searchButton: {
-    borderRadius: 50,
-  },
 });
 
 const ChallengeInviteeListRootContainer = styled.div`
-  max-width: 110vw;
-  margin: 0 auto;
+  margin-left: 10px;
+  max-width: 620px;
+  width: 100%;
 `;
 
 const Heading = styled.div`
-  padding: 0 16px;
+  padding: 10px 0;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+`;
+
+const FriendsTableHeader = styled('div')`
+  width: 80%;
+  font-size: 18px;
+  color: ${DesignTokenColors.neutral900}; /* Default color */
+  padding: 0 10px;
+`;
+
+const RankContainer = styled.p`
+  font-size: 16px;
+  color: ${DesignTokenColors.neutral900}; /* Default color */
+`;
+
+const RankText = styled.span`
+  font-weight: bold;
+  color: ${DesignTokenColors.neutral900};  /* Color for "You're" */
+`;
+
+const RankNumber = styled.span`
+  font-weight: bold;
+  color: ${DesignTokenColors.accent500};  /* Accent color for the rank number */
+`;
+
+const RankDetails = styled.span`
+  color: ${DesignTokenColors.neutral600};  /* Subdued color for "(of 6441)" */
 `;
 
 export default withStyles(styles)(ChallengeInviteeListRoot);

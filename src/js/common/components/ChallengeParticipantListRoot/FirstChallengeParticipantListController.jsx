@@ -6,6 +6,7 @@ import initializejQuery from '../../utils/initializejQuery';
 import { renderLog } from '../../utils/logging';
 import VoterStore from '../../../stores/VoterStore';
 
+const UPDATE_NO_MORE_OFTEN_THAN = 30000;  // 30 seconds
 
 class FirstChallengeParticipantListController extends Component {
   constructor (props) {
@@ -21,6 +22,9 @@ class FirstChallengeParticipantListController extends Component {
   }
 
   componentDidUpdate (prevProps) {
+    if (this.props.challengeWeVoteId !== prevProps.challengeWeVoteId) {
+      this.challengeParticipantListFirstRetrieve();
+    }
     if (this.props.searchText !== prevProps.searchText) {
       if (this.searchTimer) clearTimeout(this.searchTimer);
       this.searchTimer = setTimeout(() => {
@@ -42,9 +46,9 @@ class FirstChallengeParticipantListController extends Component {
     const { challengeWeVoteId } = this.props;
     initializejQuery(() => {
       const voterFirstRetrieveCompleted = VoterStore.voterFirstRetrieveCompleted();
-      // console.log('FirstChallengeParticipantListController challengeParticipantListFirstRetrieveInitiated: ', challengeParticipantListFirstRetrieveInitiated, ', voterFirstRetrieveCompleted: ', voterFirstRetrieveCompleted);
-      if (voterFirstRetrieveCompleted) {
-        if (apiCalming(`challengeParticipantListFirstRetrieve-${challengeWeVoteId}`, 60000)) {
+      // console.log('FirstChallengeParticipantListController challengeParticipantListFirstRetrieveInitiated, voterFirstRetrieveCompleted: ', voterFirstRetrieveCompleted, ', challengeWeVoteId: ', challengeWeVoteId);
+      if (voterFirstRetrieveCompleted && challengeWeVoteId) {
+        if (apiCalming(`challengeParticipantListFirstRetrieve-${challengeWeVoteId}`, UPDATE_NO_MORE_OFTEN_THAN)) {
           ChallengeParticipantActions.challengeParticipantListRetrieve(challengeWeVoteId);
         }
       }
@@ -55,8 +59,10 @@ class FirstChallengeParticipantListController extends Component {
     const { challengeWeVoteId, searchText } = this.props;
     initializejQuery(() => {
       // console.log(`challengeParticipantListRetrieve-${searchText}`);
-      if (apiCalming(`challengeParticipantListRetrieve-${challengeWeVoteId}-${searchText}`, 180000)) {
-        ChallengeParticipantActions.challengeParticipantListRetrieve(challengeWeVoteId, searchText);
+      if (challengeWeVoteId) {
+        if (apiCalming(`challengeParticipantListRetrieve-${challengeWeVoteId}-${searchText}`, 180000)) {
+          ChallengeParticipantActions.challengeParticipantListRetrieve(challengeWeVoteId, searchText);
+        }
       }
     });
   }

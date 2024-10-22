@@ -447,7 +447,7 @@ export default class SignInOptionsPanel extends Component {
                       {showRecommendedText &&
                         <RecommendedText className="u-tl u-stack--sm">Recommended</RecommendedText>}
                       <TwitterSignIn
-                        buttonText="Sign in with Twitter"
+                        buttonText="Sign in with X"
                         buttonSubmittedText="Signing in..."
                         inModal={inModal}
                         closeSignInModal={this.closeSignInModalLocal}
@@ -480,7 +480,7 @@ export default class SignInOptionsPanel extends Component {
                     <span className="account-edit-action" onKeyDown={this.twitterLogOutOnKeyDown.bind(this)}>
                       <span
                         className="pull-right u-link-color u-cursor--pointer"
-                        onClick={this.signOut.bind(this)}
+                        onClick={this.signOut.bind(this)} id = "signOut_securitySignIn"
                       >
                         sign out
                       </span>
@@ -552,6 +552,7 @@ export default class SignInOptionsPanel extends Component {
               // hideSignInWithPhoneForm={isCordova()}
               showAllSignInOptions={this.showAllSignInOptions}
               showPhoneOnlySignIn={this.showPhoneOnlySignIn}
+              showEmailOnlySignIn={this.showEmailOnlySignIn}
             />
             {/* {isCordova() && ( */}
             {/*  <VoterPhoneEmailCordovaEntryModal */}
@@ -624,7 +625,8 @@ export default class SignInOptionsPanel extends Component {
             </div>
             )}
             <TermsWrapper>
-              By continuing, you accept WeVote.US’s 
+              By continuing, you accept WeVote.US’s
+              {' '}
               <Suspense fallback={<></>}>
                 <OpenExternalWebSite
                   linkIdAttribute="openTermsOfService"
@@ -637,8 +639,10 @@ export default class SignInOptionsPanel extends Component {
                     </span>
                   )}
                 />
-              </Suspense> 
-              and 
+              </Suspense>
+              {' '}
+              and
+              {' '}
               <Suspense fallback={<></>}>
                 <OpenExternalWebSite
                   linkIdAttribute="openPrivacyPolicy"
@@ -651,9 +655,9 @@ export default class SignInOptionsPanel extends Component {
                     </span>
                   )}
                 />
-              </Suspense> 
+              </Suspense>
               .
-              </TermsWrapper>
+            </TermsWrapper>
           </Main>
         </SignInOptionsPanelWrapper>
       </>
@@ -681,9 +685,10 @@ const OrWrapper = styled('div')(({ theme }) => (`
 `));
 
 const TermsWrapper = styled('div')(({ theme }) => (`
-  ${theme.breakpoints.down('sm')} {
-    padding-top: 30px;
-  }
+  margin-top: 30px;
+  // ${theme.breakpoints.down('sm')} {
+  //   padding-top: 30px;
+  // }
 `));
 
 const Main = styled('div', {

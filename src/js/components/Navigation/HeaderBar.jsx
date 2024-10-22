@@ -30,11 +30,11 @@ import FriendsTabs from './FriendsTabs';
 import HeaderBarLogo from './HeaderBarLogo';
 import HeaderBarModals from './HeaderBarModals';
 import TabWithPushHistory from './TabWithPushHistory';
-import webAppConfig from '../../config';
+// import webAppConfig from '../../config';
 
 
 const HeaderNotificationMenu = React.lazy(() => import(/* webpackChunkName: 'HeaderNotificationMenu' */ './HeaderNotificationMenu'));
-const nextReleaseFeaturesEnabled = webAppConfig.ENABLE_NEXT_RELEASE_FEATURES === undefined ? false : webAppConfig.ENABLE_NEXT_RELEASE_FEATURES;
+// const nextReleaseFeaturesEnabled = webAppConfig.ENABLE_NEXT_RELEASE_FEATURES === undefined ? false : webAppConfig.ENABLE_NEXT_RELEASE_FEATURES;
 
 /* global $ */
 
@@ -108,6 +108,9 @@ class HeaderBar extends Component {
         }
         if (document.getElementById('candidatesTabHeaderBar')) {
           headerObjects.candidates = document.getElementById('candidatesTabHeaderBar').innerHTML;
+        }
+        if (document.getElementById('challengesTabHeaderBar')) {
+          headerObjects.challenges = document.getElementById('challengesTabHeaderBar').innerHTML;
         }
         if (document.getElementById('friendsTabHeaderBar')) {
           headerObjects.opinions = document.getElementById('friendsTabHeaderBar').innerHTML;
@@ -364,12 +367,14 @@ class HeaderBar extends Component {
       // console.log('customHighlightSelector called for page: ', normalizedHrefPage());
       const ballot = $('#ballotTabHeaderBar');
       const candidates = $('#candidatesTabHeaderBar');
+      const challenges = $('#challengesTabHeaderBar');
       const friends = $('#friendsTabHeaderBar');
       const news = $('#discussTabHeaderBar');
       const donate = $('#donateTabHeaderBar');
       const squads = $('#squadsTabHeaderBar');
       ballot.css(normal);
       candidates.css(normal);   // Candidates (not individual candidate page)
+      challenges.css(normal);   // Democracy Challenges
       friends.css(normal);      // Friends
       news.css(normal);         // Discuss
       donate.css(normal);       // Donate
@@ -381,6 +386,9 @@ class HeaderBar extends Component {
           break;
         case 'candidatelist': // displays same page as "cs"
           candidates.css(highlight);
+          break;
+        case 'challenges':
+          challenges.css(highlight);
           break;
         case 'friends':
           friends.css(highlight);
@@ -466,7 +474,7 @@ class HeaderBar extends Component {
     let donateVisible;
     const friendsVisible = false; // 2023-09-04 Dale We are turning off Friends header link for now
     let howItWorksValue;
-    const squadsVisible = isWebApp() && nextReleaseFeaturesEnabled;
+    const squadsVisible = isWebApp();
     // const squadsVisible = false;
     let squadsValue;
     // let howItWorksVisible;
@@ -571,7 +579,7 @@ class HeaderBar extends Component {
                       classes={isWebApp() ? { root: classes.tabRootDonateDesktop } : { root: classes.tabRootDonate }}
                       value={squadsValue}
                       change={this.handleTabChange}
-                      id="squadsTabHeaderBar"
+                      id="challengesTabHeaderBar"
                       label="Challenges"  // Was Squads
                       to="/challenges"  // Was "/squads"
                     />

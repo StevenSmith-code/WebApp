@@ -4,28 +4,25 @@ import PropTypes from 'prop-types';
 import React, { Component, Suspense } from 'react';
 import { Helmet } from 'react-helmet-async';
 import styled from 'styled-components';
-import VoterActions from '../../../actions/VoterActions';
-import webAppConfig from '../../../config';
-import VoterStore from '../../../stores/VoterStore';
-import ChallengeParticipantActions from '../../actions/ChallengeParticipantActions';
 import ChallengeHeaderSimple from '../../components/Navigation/ChallengeHeaderSimple';
-import { CampaignProcessStepIntroductionText } from '../../components/Style/CampaignProcessStyles';
 import { CampaignSupportSection, CampaignSupportSectionWrapper } from '../../components/Style/CampaignSupportStyles';
 import commonMuiStyles from '../../components/Style/commonMuiStyles';
 import { ContentInnerWrapperDefault, ContentOuterWrapperDefault, PageWrapperDefault } from '../../components/Style/PageWrapperStyles';
 import AppObservableStore, { messageService } from '../../stores/AppObservableStore';
 import ChallengeStore from '../../stores/ChallengeStore';
-import ChallengeParticipantStore from '../../stores/ChallengeParticipantStore';
 import { getChallengeValuesFromIdentifiers, retrieveChallengeFromIdentifiersIfNeeded } from '../../utils/challengeUtils';
 import historyPush from '../../utils/historyPush';
-import initializejQuery from '../../utils/initializejQuery';
 import { renderLog } from '../../utils/logging';
 import DesignTokenColors from '../../components/Style/DesignTokenColors';
 import ChallengeInviteSteps from '../../components/Navigation/ChallengeInviteSteps';
 import ChallengeInviteeListRoot from '../../components/ChallengeInviteeListRoot/ChallengeInviteeListRoot';
-import InviteFriendToChallengeInput from '../../components/ChallengeInviteeListRoot/InviteFriendToChallengeInput';
+import ChallengeInviteeStore from '../../stores/ChallengeInviteeStore';
+import InviteFriendsTips from '../../components/ChallengeInviteFriends/InviteFriendsTips';
+import InviteFriendToChallengeInput from '../../components/ChallengeInviteFriends/InviteFriendToChallengeInput';
+import YourRank from '../../components/Challenge/YourRank';
 
 const ChallengeRetrieveController = React.lazy(() => import(/* webpackChunkName: 'ChallengeRetrieveController' */ '../../components/Challenge/ChallengeRetrieveController'));
+const FirstChallengeInviteeListController = React.lazy(() => import(/* webpackChunkName: 'ChallengeRetrieveController' */ '../../components/ChallengeInviteeListRoot/FirstChallengeInviteeListController'));
 const VoterFirstRetrieveController = loadable(() => import(/* webpackChunkName: 'VoterFirstRetrieveController' */ '../../components/Settings/VoterFirstRetrieveController'));
 
 
@@ -38,9 +35,7 @@ class ChallengeInviteFriends extends Component {
       challengeTitle: '',
       challengeWeVoteId: '',
       chosenWebsiteName: '',
-      linkedPoliticianWeVoteId: '',
-      payToPromoteStepTurnedOn: true,
-      weVoteHostedProfileImageUrlLarge: '',
+      inviteeList: [],
     };
   }
 
@@ -49,26 +44,24 @@ class ChallengeInviteFriends extends Component {
     this.props.setShowHeaderFooter(false);
     this.onAppObservableStoreChange();
     this.appStateSubscription = messageService.getMessage().subscribe(() => this.onAppObservableStoreChange());
+    this.onChallengeInviteeStoreChange();
+    this.challengeInviteeStoreListener = ChallengeInviteeStore.addListener(this.onChallengeInviteeStoreChange.bind(this));
     this.onChallengeStoreChange();
     this.challengeStoreListener = ChallengeStore.addListener(this.onChallengeStoreChange.bind(this));
-    this.onVoterStoreChange();
-    this.voterStoreListener = VoterStore.addListener(this.onVoterStoreChange.bind(this));
     const { match: { params } } = this.props;
     const { challengeSEOFriendlyPath: challengeSEOFriendlyPathFromParams, challengeWeVoteId: challengeWeVoteIdFromParams } = params;
     // console.log('componentDidMount challengeSEOFriendlyPathFromParams: ', challengeSEOFriendlyPathFromParams, ', challengeWeVoteIdFromParams: ', challengeWeVoteIdFromParams);
     const {
       challengePhotoLargeUrl,
       challengeSEOFriendlyPath,
-      challengePoliticianList,
+      // challengePoliticianList,
       challengeWeVoteId,
-      linkedPoliticianWeVoteId,
-      weVoteHostedProfileImageUrlLarge,
+      // linkedPoliticianWeVoteId,
     } = getChallengeValuesFromIdentifiers(challengeSEOFriendlyPathFromParams, challengeWeVoteIdFromParams);
     this.setState({
       challengePhotoLargeUrl,
-      challengePoliticianList,
-      linkedPoliticianWeVoteId,
-      weVoteHostedProfileImageUrlLarge,
+      // challengePoliticianList,
+      // linkedPoliticianWeVoteId,
     });
     if (challengeSEOFriendlyPath) {
       this.setState({
@@ -93,22 +86,41 @@ class ChallengeInviteFriends extends Component {
     window.scrollTo(0, 0);
   }
 
+  componentDidUpdate (prevProps, prevState) {
+    const {
+      challengeWeVoteId: prevChallengeWeVoteId,
+    } = prevState;
+    const {
+      challengeWeVoteId,
+    } = this.state;
+    if (challengeWeVoteId !== prevChallengeWeVoteId) {
+      this.onChallengeInviteeStoreChange();
+    }
+  }
+
   componentWillUnmount () {
     this.props.setShowHeaderFooter(true);
     this.appStateSubscription.unsubscribe();
+    this.challengeInviteeStoreListener.remove();
     this.challengeStoreListener.remove();
-    this.voterStoreListener.remove();
   }
 
   onAppObservableStoreChange () {
     const chosenWebsiteName = AppObservableStore.getChosenWebsiteName();
-    const inPrivateLabelMode = AppObservableStore.inPrivateLabelMode();
     // For now, we assume that paid sites with chosenSiteLogoUrl will turn off "Chip in"
-    const payToPromoteStepTurnedOn = !inPrivateLabelMode && webAppConfig.ENABLE_PAY_TO_PROMOTE;
     this.setState({
       chosenWebsiteName,
-      payToPromoteStepTurnedOn,
     });
+  }
+
+  onChallengeInviteeStoreChange () {
+    const { challengeWeVoteId } = this.state;
+    if (challengeWeVoteId) {
+      const inviteeList = ChallengeInviteeStore.getChallengeInviteeList(challengeWeVoteId);
+      this.setState({
+        inviteeList,
+      });
+    }
   }
 
   onChallengeStoreChange () {
@@ -119,17 +131,15 @@ class ChallengeInviteFriends extends Component {
       challengePhotoLargeUrl,
       challengeSEOFriendlyPath,
       challengeTitle,
-      challengePoliticianList,
+      // challengePoliticianList,
       challengeWeVoteId,
-      linkedPoliticianWeVoteId,
-      weVoteHostedProfileImageUrlLarge,
+      // linkedPoliticianWeVoteId,
     } = getChallengeValuesFromIdentifiers(challengeSEOFriendlyPathFromParams, challengeWeVoteIdFromParams);
     this.setState({
       challengePhotoLargeUrl,
       challengeTitle,
-      challengePoliticianList,
-      linkedPoliticianWeVoteId,
-      weVoteHostedProfileImageUrlLarge,
+      // challengePoliticianList,
+      // linkedPoliticianWeVoteId,
     });
     if (challengeSEOFriendlyPath) {
       this.setState({
@@ -151,13 +161,6 @@ class ChallengeInviteFriends extends Component {
     }
   }
 
-  onVoterStoreChange () {
-    const voterPhotoUrlLarge = VoterStore.getVoterPhotoUrlLarge();
-    this.setState({
-      voterPhotoUrlLarge,
-    });
-  }
-
   getChallengeBasePath = () => {
     const { challengeSEOFriendlyPath, challengeWeVoteId } = this.state;
     let challengeBasePath;
@@ -169,76 +172,15 @@ class ChallengeInviteFriends extends Component {
     return challengeBasePath;
   }
 
-  getPoliticianBasePath = () => {
-    const { politicianSEOFriendlyPath, linkedPoliticianWeVoteId } = this.state;
-    let politicianBasePath;
-    if (politicianSEOFriendlyPath) {
-      politicianBasePath = `/${politicianSEOFriendlyPath}/-/`;
-    } else if (linkedPoliticianWeVoteId) {
-      politicianBasePath = `/${linkedPoliticianWeVoteId}/p/`;
-    } else {
-      // console.log('ChallengeRecommendedChallenges getPoliticianBasePath, failed to get politicianBasePath');
-      politicianBasePath = this.getChallengeBasePath();
-    }
-    return politicianBasePath;
-  }
-
-  goToNextStep = () => {
-    const { payToPromoteStepTurnedOn } = this.state;
-    if (payToPromoteStepTurnedOn) {
-      historyPush(`${this.getChallengeBasePath()}pay-to-promote`);
-    } else {
-      historyPush(`${this.getChallengeBasePath()}share-challenge`);
-    }
-  }
-
   goToChallengeHome = () => {
-    historyPush(this.getChallengeBasePath());
-  }
-
-  submitSkipForNow = () => {
-    initializejQuery(() => {
-      ChallengeParticipantActions.participantEndorsementQueuedToSave(undefined);
-    });
-    this.goToNextStep();
-  }
-
-  joinChallengeNowSubmit = () => {
-    const { challengeWeVoteId } = this.state;
-    if (challengeWeVoteId) {
-      const participantEndorsementQueuedToSave = ChallengeParticipantStore.getSupporterEndorsementQueuedToSave();
-      const participantEndorsementQueuedToSaveSet = ChallengeParticipantStore.getSupporterEndorsementQueuedToSaveSet();
-      let visibleToPublic = ChallengeParticipantStore.getVisibleToPublic();
-      const visibleToPublicChanged = ChallengeParticipantStore.getVisibleToPublicQueuedToSaveSet();
-      if (visibleToPublicChanged) {
-        // If it has changed, use new value
-        visibleToPublic = ChallengeParticipantStore.getVisibleToPublicQueuedToSave();
-      }
-      if (participantEndorsementQueuedToSaveSet || visibleToPublicChanged) {
-        // console.log('ChallengeInviteFriends, participantEndorsementQueuedToSave:', participantEndorsementQueuedToSave);
-        const saveVisibleToPublic = true;
-        initializejQuery(() => {
-          ChallengeParticipantActions.participantEndorsementSave(challengeWeVoteId, participantEndorsementQueuedToSave, visibleToPublic, saveVisibleToPublic); // challengeParticipantSave
-          ChallengeParticipantActions.participantEndorsementQueuedToSave(undefined);
-        });
-      }
-      const voterPhotoQueuedToSave = VoterStore.getVoterPhotoQueuedToSave();
-      const voterPhotoQueuedToSaveSet = VoterStore.getVoterPhotoQueuedToSaveSet();
-      if (voterPhotoQueuedToSaveSet) {
-        initializejQuery(() => {
-          VoterActions.voterPhotoSave(voterPhotoQueuedToSave, voterPhotoQueuedToSaveSet);
-          VoterActions.voterPhotoQueuedToSave(undefined);
-        });
-      }
-      this.goToNextStep();
-    }
+    historyPush(`${this.getChallengeBasePath()}leaderboard`);
   }
 
   render () {
     renderLog('ChallengeInviteFriends');  // Set LOG_RENDER_EVENTS to log all renders
     const {
-      challengeSEOFriendlyPath, challengeTitle,
-      challengeWeVoteId, chosenWebsiteName,
+      challengePhotoLargeUrl, challengeSEOFriendlyPath, challengeTitle,
+      challengeWeVoteId, chosenWebsiteName, inviteeList,
     } = this.state;
     const htmlTitle = `Invite your friends - ${chosenWebsiteName}`;
     return (
@@ -249,10 +191,10 @@ class ChallengeInviteFriends extends Component {
         </Helmet>
         <ChallengeHeaderSimple
           challengeBasePath={this.getChallengeBasePath()}
+          challengePhotoLargeUrl={challengePhotoLargeUrl}
           challengeTitle={challengeTitle}
           challengeWeVoteId={challengeWeVoteId}
           goToChallengeHome={this.goToChallengeHome}
-          politicianBasePath={this.getPoliticianBasePath()}
         />
         <ChallengeTabsWrapper>
           <ChallengeInviteSteps
@@ -263,15 +205,7 @@ class ChallengeInviteFriends extends Component {
         <PageWrapperDefault>
           <ContentOuterWrapperDefault>
             <ContentInnerWrapperDefault>
-              <CampaignProcessStepIntroductionText>
-                So we can correctly calculate your boost points,
-                {' '}
-                <strong>
-                  name each friend and invite them separately
-                </strong>
-                {' '}
-                (a unique link is generated for each friend).
-              </CampaignProcessStepIntroductionText>
+              <InviteFriendsTips startingTipName="nameEachFriend" />
               <CampaignSupportSectionWrapper marginTopOff>
                 <CampaignSupportSection marginBottomOff>
                   <InviteFriendToChallengeInput challengeWeVoteId={challengeWeVoteId} />
@@ -281,14 +215,17 @@ class ChallengeInviteFriends extends Component {
           </ContentOuterWrapperDefault>
         </PageWrapperDefault>
         <InvitedFriendsWrapper>
-          YOUR RANK IN CHALLENGE HERE
-          <ChallengeInviteeListRoot challengeWeVoteId={challengeWeVoteId} />
+          <YourRank challengeSEOFriendlyPath={challengeSEOFriendlyPath} challengeWeVoteId={challengeWeVoteId} />
+          <ChallengeInviteeListRoot challengeWeVoteId={challengeWeVoteId} hideRank />
         </InvitedFriendsWrapper>
         <Suspense fallback={<span>&nbsp;</span>}>
           <ChallengeRetrieveController challengeSEOFriendlyPath={challengeSEOFriendlyPath} challengeWeVoteId={challengeWeVoteId} />
         </Suspense>
         <Suspense fallback={<span>&nbsp;</span>}>
           <VoterFirstRetrieveController />
+        </Suspense>
+        <Suspense fallback={<></>}>
+          <FirstChallengeInviteeListController challengeWeVoteId={challengeWeVoteId} />
         </Suspense>
       </div>
     );

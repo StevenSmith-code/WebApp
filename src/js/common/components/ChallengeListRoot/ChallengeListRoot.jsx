@@ -5,10 +5,15 @@ import PropTypes from 'prop-types';
 import React, { Component, createRef } from 'react';
 import styled from 'styled-components';
 import {
-  CampaignsHorizontallyScrollingContainer, RightArrowInnerWrapper,
-  RightArrowOuterWrapper, LeftArrowInnerWrapper, LeftArrowOuterWrapper,
-  CampaignsScrollingInnerWrapper, CampaignsScrollingOuterWrapper,
-  TitleAndMobileArrowsOuterWrapper, MobileArrowsInnerWrapper,
+  CampaignsHorizontallyScrollingContainer,
+  RightArrowInnerWrapper,
+  RightArrowOuterWrapper,
+  LeftArrowInnerWrapper,
+  LeftArrowOuterWrapper,
+  CampaignsScrollingInnerWrapper,
+  ChallengesScrollingOuterWrapper,
+  TitleAndMobileArrowsOuterWrapper,
+  MobileArrowsInnerWrapper,
 } from '../Style/ScrollingStyles';
 import { convertStateCodeToStateText } from '../../utils/addressFunctions';
 import { handleHorizontalScroll, leftAndRightArrowStateCalculation, checkDivPositionForLoadMore } from '../../utils/leftRightArrowCalculation';
@@ -108,7 +113,11 @@ class ChallengeListRoot extends Component {
   // Order by 1, 2, 3. Push 0's to the bottom in the same order.
   orderByOrderInList = (firstEntry, secondEntry) => (firstEntry.order_in_list || Number.MAX_VALUE) - (secondEntry.order_in_list || Number.MAX_VALUE);
 
-  orderBySupportersCount = (firstEntry, secondEntry) => secondEntry.participants_count - firstEntry.participants_count;
+  orderByInviteesCount = (firstEntry, secondEntry) => secondEntry.invitees_count - firstEntry.invitees_count;
+
+  orderByInviteesPlusParticipantsCount = (firstEntry, secondEntry) => (secondEntry.invitees_count + secondEntry.participants_count) - (firstEntry.invitees_count + firstEntry.participants_count);
+
+  orderByParticipantsCount = (firstEntry, secondEntry) => secondEntry.participants_count - firstEntry.participants_count;
 
   orderCandidatesByUltimateDate = (firstEntry, secondEntry) => secondEntry.candidate_ultimate_election_date - firstEntry.candidate_ultimate_election_date;
 
@@ -155,11 +164,11 @@ class ChallengeListRoot extends Component {
     // Now filter
 
     // //////////
-    // Now sort
-    // We need to add support for ballot_item_twitter_followers_count
-    // filteredList = filteredList.sort(this.orderPositionsByBallotItemTwitterFollowers);
+    // Now sort, with the most important sort at the bottom of this list
     filteredList = filteredList.sort(this.orderByAlphabetical);
-    filteredList = filteredList.sort(this.orderBySupportersCount);
+    filteredList = filteredList.sort(this.orderByParticipantsCount);
+    // filteredList = filteredList.sort(this.orderByInviteesCount);
+    filteredList = filteredList.sort(this.orderByInviteesPlusParticipantsCount);
     filteredList = filteredList.sort(this.orderByOrderInList);
     let challengeSearchResults = [];
     if (searchText && searchText.length > 0) {
@@ -242,7 +251,18 @@ class ChallengeListRoot extends Component {
       challengeSearchResults,
       filteredList,
       timeStampOfChange: Date.now(),
-    });
+    }, () => { this.handleNumberOfResults(filteredList.length, challengeSearchResults.length); });
+  }
+
+  handleNumberOfResults (numberOfFilteredResults, numberOfSearchResults) {
+    // console.log('RepresentativeListRoot handleNumberOfResults numberOfFilteredResults:', numberOfFilteredResults, ', numberOfSearchResults:', numberOfSearchResults);
+    if (this.props.handleNumberOfResults) {
+      // Delay telling the parent component that the number of results has changed
+      // if (this.timer) clearTimeout(this.timer);
+      // this.timer = setTimeout(() => {
+      this.props.handleNumberOfResults(numberOfFilteredResults, numberOfSearchResults);
+      // }, 500);
+    }
   }
 
   leftAndRightArrowSetState = (el) => {
@@ -302,7 +322,7 @@ class ChallengeListRoot extends Component {
             </RightArrowInnerWrapper>
           </MobileArrowsInnerWrapper>
         </TitleAndMobileArrowsOuterWrapper>
-        <CampaignsScrollingOuterWrapper>
+        <ChallengesScrollingOuterWrapper>
           <LeftArrowOuterWrapper className="u-show-desktop-tablet">
             <LeftArrowInnerWrapper id="campaignLeftArrowDesktop" onClick={() => { handleHorizontalScroll(this.scrollElement.current, HORIZONTAL_SCROLL_DISTANCE_ON_LEFT_ARROW_CLICK, this.leftAndRightArrowSetState, RIGHT_MARGIN_SIZE); }}>
               { this.state.hideLeftArrow ? null : <ArrowBackIos classes={{ root: classes.arrowRoot }} /> }
@@ -331,7 +351,7 @@ class ChallengeListRoot extends Component {
               { this.state.hideRightArrow ? null : <ArrowForwardIos classes={{ root: classes.arrowRoot }} /> }
             </RightArrowInnerWrapper>
           </RightArrowOuterWrapper>
-        </CampaignsScrollingOuterWrapper>
+        </ChallengesScrollingOuterWrapper>
       </ChallengeListWrapper>
     );
   }

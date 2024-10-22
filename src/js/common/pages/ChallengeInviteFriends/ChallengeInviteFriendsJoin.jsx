@@ -21,7 +21,7 @@ import commonMuiStyles from '../../components/Style/commonMuiStyles';
 import { ContentInnerWrapperDefault, ContentOuterWrapperDefault, PageWrapperDefault } from '../../components/Style/PageWrapperStyles';
 import AppObservableStore, { messageService } from '../../stores/AppObservableStore';
 import ChallengeStore from '../../stores/ChallengeStore';
-import ChallengeParticipantStore from '../../stores/ChallengeParticipantStore';
+// import ChallengeParticipantStore from '../../stores/ChallengeParticipantStore';
 import { getChallengeValuesFromIdentifiers, retrieveChallengeFromIdentifiersIfNeeded } from '../../utils/challengeUtils';
 import historyPush from '../../utils/historyPush';
 import initializejQuery from '../../utils/initializejQuery';
@@ -32,7 +32,6 @@ import apiCalming from '../../utils/apiCalming';
 import SettingsWidgetFirstLastName from '../../../components/Settings/SettingsWidgetFirstLastName';
 
 const ChallengeRetrieveController = React.lazy(() => import(/* webpackChunkName: 'ChallengeRetrieveController' */ '../../components/Challenge/ChallengeRetrieveController'));
-const VisibleToPublicCheckbox = React.lazy(() => import(/* webpackChunkName: 'VisibleToPublicCheckbox' */ '../../components/CampaignSupport/VisibleToPublicCheckbox'));
 const VoterFirstRetrieveController = loadable(() => import(/* webpackChunkName: 'VoterFirstRetrieveController' */ '../../components/Settings/VoterFirstRetrieveController'));
 
 
@@ -57,6 +56,7 @@ class ChallengeInviteFriendsJoin extends Component {
     this.props.setShowHeaderFooter(false);
     this.onAppObservableStoreChange();
     this.appStateSubscription = messageService.getMessage().subscribe(() => this.onAppObservableStoreChange());
+    AppObservableStore.setShowChallengeThanksForJoining(true);
     this.onChallengeStoreChange();
     this.challengeStoreListener = ChallengeStore.addListener(this.onChallengeStoreChange.bind(this));
     this.onVoterStoreChange();
@@ -113,12 +113,9 @@ class ChallengeInviteFriendsJoin extends Component {
 
   onAppObservableStoreChange () {
     const chosenWebsiteName = AppObservableStore.getChosenWebsiteName();
-    const inPrivateLabelMode = AppObservableStore.inPrivateLabelMode();
     // For now, we assume that paid sites with chosenSiteLogoUrl will turn off "Chip in"
-    const payToPromoteStepTurnedOn = !inPrivateLabelMode && webAppConfig.ENABLE_PAY_TO_PROMOTE;
     this.setState({
       chosenWebsiteName,
-      payToPromoteStepTurnedOn,
     });
   }
 
@@ -127,6 +124,7 @@ class ChallengeInviteFriendsJoin extends Component {
     const { challengeSEOFriendlyPath: challengeSEOFriendlyPathFromParams, challengeWeVoteId: challengeWeVoteIdFromParams } = params;
     // console.log('onChallengeStoreChange challengeSEOFriendlyPathFromParams: ', challengeSEOFriendlyPathFromParams, ', challengeWeVoteIdFromParams: ', challengeWeVoteIdFromParams);
     const {
+      challengeInviteTextDefault,
       challengePhotoLargeUrl,
       challengeSEOFriendlyPath,
       challengeTitle,
@@ -136,6 +134,7 @@ class ChallengeInviteFriendsJoin extends Component {
       weVoteHostedProfileImageUrlLarge,
     } = getChallengeValuesFromIdentifiers(challengeSEOFriendlyPathFromParams, challengeWeVoteIdFromParams);
     this.setState({
+      challengeInviteTextDefault,
       challengePhotoLargeUrl,
       challengeTitle,
       challengePoliticianList,
@@ -208,7 +207,7 @@ class ChallengeInviteFriendsJoin extends Component {
   }
 
   joinChallengeNowSubmitPart2 = () => {
-    const { challengeWeVoteId } = this.state;
+    const { challengeInviteTextDefault, challengeWeVoteId } = this.state;
     // console.log('ChallengeInviteFriendsJoin, joinChallengeNowSubmitPart2, challengeWeVoteId:', challengeWeVoteId);
     if (challengeWeVoteId) {
       // const participantEndorsementQueuedToSave = ChallengeParticipantStore.getSupporterEndorsementQueuedToSave();
@@ -225,25 +224,23 @@ class ChallengeInviteFriendsJoin extends Component {
       //   // console.log('ChallengeInviteFriendsJoin, participantEndorsementQueuedToSave:', participantEndorsementQueuedToSave);
       //   const saveVisibleToPublic = true;
       //   initializejQuery(() => {
-      //     ChallengeParticipantActions.participantEndorsementSave(challengeWeVoteId, participantEndorsementQueuedToSave, visibleToPublic, saveVisibleToPublic); // challengeParticipantSave
+      //     ChallengeParticipantActions.challengeParticipantSave(challengeWeVoteId, participantEndorsementQueuedToSave, visibleToPublic, saveVisibleToPublic);
       //     ChallengeParticipantActions.participantEndorsementQueuedToSave(undefined);
       //   });
       // }
       const voterPhotoQueuedToSave = VoterStore.getVoterPhotoQueuedToSave();
       const voterPhotoQueuedToSaveSet = VoterStore.getVoterPhotoQueuedToSaveSet();
+      // console.log('ChallengeInviteFriendsJoin, voterPhotoQueuedToSave:', voterPhotoQueuedToSave, ', voterPhotoQueuedToSaveSet:', voterPhotoQueuedToSaveSet);
       if (voterPhotoQueuedToSaveSet) {
         initializejQuery(() => {
           VoterActions.voterPhotoSave(voterPhotoQueuedToSave, voterPhotoQueuedToSaveSet);
           VoterActions.voterPhotoQueuedToSave(undefined);
         });
       }
-      // Has all the necessary data been saved?
-
-      // TODO Save "Join Challenge" here
-      ChallengeParticipantActions.challengeParticipantSave(challengeWeVoteId);
+      ChallengeParticipantActions.challengeParticipantSave(challengeWeVoteId, challengeInviteTextDefault, true);
 
       // If all the necessary data has been saved, proceed to the next step
-      console.log(`ChallengeInviteFriendsJoin, joinChallengeNowSubmitPart2, redirect to ${this.getChallengeBasePath()}customize-message`);
+      // console.log(`ChallengeInviteFriendsJoin, joinChallengeNowSubmitPart2, redirect to ${this.getChallengeBasePath()}customize-message`);
       historyPush(`${this.getChallengeBasePath()}customize-message`);
     }
   }
@@ -252,11 +249,12 @@ class ChallengeInviteFriendsJoin extends Component {
     renderLog('ChallengeInviteFriendsJoin');  // Set LOG_RENDER_EVENTS to log all renders
     const { classes } = this.props;
     const {
-      challengeSEOFriendlyPath, challengeTitle,
+      challengePhotoLargeUrl, challengeSEOFriendlyPath, challengeTitle,
       challengeWeVoteId, chosenWebsiteName,
-      triggerVotingPlanSave, voterPhotoUrlLarge,
+      triggerVotingPlanSave,
     } = this.state;
     const htmlTitle = `Join now: ${challengeTitle}? - ${chosenWebsiteName}`;
+    const pigsCanFly = false;
     return (
       <div>
         <Helmet>
@@ -265,6 +263,7 @@ class ChallengeInviteFriendsJoin extends Component {
         </Helmet>
         <ChallengeHeaderSimple
           challengeBasePath={this.getChallengeBasePath()}
+          challengePhotoLargeUrl={challengePhotoLargeUrl}
           challengeTitle={challengeTitle}
           challengeWeVoteId={challengeWeVoteId}
           goToChallengeHome={this.goToChallengeHome}
@@ -272,7 +271,7 @@ class ChallengeInviteFriendsJoin extends Component {
         />
         <ChallengeH1Wrapper>
           <ChallengeH1>
-            To join this challenge, share how you will vote &mdash; then ask your friends to join.
+            To join this challenge, share when you will cast your vote &mdash; then ask your friends to join.
           </ChallengeH1>
         </ChallengeH1Wrapper>
         <PageWrapperDefault>
@@ -311,17 +310,19 @@ class ChallengeInviteFriendsJoin extends Component {
                   {/* </VisibleToPublicCheckboxWrapper> */}
                 </CampaignSupportSection>
               </CampaignSupportSectionWrapper>
-              <CampaignSupportSectionWrapper>
-                <CampaignSupportSection>
-                  <ChallengeH2>
-                    3. Why you will vote
-                    {' '}
-                    <HeaderAddendum>
-                      (optional, visible to all)
-                    </HeaderAddendum>
-                  </ChallengeH2>
-                </CampaignSupportSection>
-              </CampaignSupportSectionWrapper>
+              {pigsCanFly && (
+                <CampaignSupportSectionWrapper>
+                  <CampaignSupportSection>
+                    <ChallengeH2>
+                      3. Why you will vote
+                      {' '}
+                      <HeaderAddendum>
+                        (optional, visible to all)
+                      </HeaderAddendum>
+                    </ChallengeH2>
+                  </CampaignSupportSection>
+                </CampaignSupportSectionWrapper>
+              )}
             </ContentInnerWrapperDefault>
           </ContentOuterWrapperDefault>
         </PageWrapperDefault>
@@ -329,15 +330,6 @@ class ChallengeInviteFriendsJoin extends Component {
           <SupportButtonPanel>
             <CenteredDiv>
               <StackedDiv>
-                <div>
-                  By continuing, you accept WeVote.US&apos;s
-                  {' '}
-                  Terms of Service
-                  {' '}
-                  and
-                  {' '}
-                  Privacy Policy.
-                </div>
                 <Button
                   // classes={{ root: classes.buttonDesktop }}
                   color="primary"
@@ -408,10 +400,6 @@ const StackedDiv = styled('div')`
   flex-direction: column;
   justify-content: center;
   max-width: 620px;
-`;
-
-const VisibleToPublicCheckboxWrapper = styled('div')`
-  min-height: 25px;
 `;
 
 export default withStyles(commonMuiStyles)(ChallengeInviteFriendsJoin);

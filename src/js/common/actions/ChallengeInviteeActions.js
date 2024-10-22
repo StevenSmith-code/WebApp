@@ -16,12 +16,31 @@ export default {
       });
   },
 
-  challengeInviteeSave (challengeWeVoteId, inviteeName) {
-    console.log('challengeInviteeSave called with challengeWeVoteId: ', challengeWeVoteId, ' and inviteeName: ', inviteeName);
+  challengeInviteeSave (challengeWeVoteId, destinationFullURL = '', googleCivicElectionId = 0, inviteeId = 0, inviteeName = '', inviteeNameChanged = false, inviteTextFromInviter = '', inviteTextFromInviterChanged = false, inviteeUrlCode = '', inviteeUrlCodeChanged = false) {
+    // console.log('challengeInviteeSave called with challengeWeVoteId: ', challengeWeVoteId, ' and inviteeName: ', inviteeName);
     Dispatcher.loadEndpoint('challengeInviteeSave',
       {
         challenge_we_vote_id: challengeWeVoteId,
+        destination_full_url: destinationFullURL,
+        google_civic_election_id: googleCivicElectionId,
+        invitee_id: inviteeId,
         invitee_name: inviteeName,
+        invitee_name_changed: inviteeNameChanged,
+        invite_text_from_inviter: inviteTextFromInviter,
+        invite_text_from_inviter_changed: inviteTextFromInviterChanged,
+        invitee_url_code: inviteeUrlCode,
+        invitee_url_code_changed: inviteeUrlCodeChanged,
+      });
+  },
+
+  challengeInviteeFlagsSave (challengeWeVoteId, inviteeId = 0, inviteSent = false, inviteSentChanged = false) {
+    // console.log('challengeInviteeFlagsSave called with challengeWeVoteId: ', challengeWeVoteId, ' and inviteeId: ', inviteeId, ', inviteSent:', inviteSent, ', inviteSentChanged:', inviteSentChanged);
+    Dispatcher.loadEndpoint('challengeInviteeSave',
+      {
+        challenge_we_vote_id: challengeWeVoteId,
+        invitee_id: inviteeId,
+        invite_sent: inviteSent,
+        invite_sent_changed: inviteSentChanged,
       });
   },
 
